@@ -66,6 +66,7 @@ private:
     ComRobot robot;
     int robotStarted = 0;
     int move = MESSAGE_ROBOT_STOP;
+    int wdState = 0; // 0 = without watchdog, 1 = with watchdog
     
     /**********************************************************************/
     /* Tasks                                                              */
@@ -76,6 +77,7 @@ private:
     RT_TASK th_openComRobot;
     RT_TASK th_startRobot;
     RT_TASK th_move;
+    RT_TASK th_watchDog;
     
     /**********************************************************************/
     /* Mutex                                                              */
@@ -92,6 +94,7 @@ private:
     RT_SEM sem_openComRobot;
     RT_SEM sem_serverOk;
     RT_SEM sem_startRobot;
+    RT_SEM sem_watchDog;
 
     /**********************************************************************/
     /* Message queues                                                     */
@@ -126,6 +129,11 @@ private:
      * @brief Thread starting the communication with the robot.
      */
     void StartRobotTask(void *arg);
+    
+    /**
+     * @brief Thread starting the watchdog.
+     */
+    void WatchDogTask(void *arg);
     
     /**
      * @brief Thread handling control of the robot.
