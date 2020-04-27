@@ -78,6 +78,7 @@ private:
     RT_TASK th_startRobot;
     RT_TASK th_move;
     RT_TASK th_watchDog;
+    RT_TASK th_battery;
     
     /**********************************************************************/
     /* Mutex                                                              */
@@ -114,6 +115,11 @@ private:
      * @brief Thread sending data to monitor.
      */
     void SendToMonTask(void *arg);
+    
+    /**
+     * @brief Thread sending data to robot.
+     */
+    Message* SendToRobot(Message *msg);
         
     /**
      * @brief Thread receiving data from monitor.
@@ -139,6 +145,11 @@ private:
      * @brief Thread handling control of the robot.
      */
     void MoveTask(void *arg);
+    
+    /**
+     * @brief Thread handling battery level.
+     */
+    void BatteryTask(void *arg);
     
     /**********************************************************************/
     /* Queue services                                                     */
