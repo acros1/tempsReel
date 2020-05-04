@@ -422,6 +422,7 @@ void Tasks::WatchDogTask(void *arg) {
         rt_mutex_release(&mutex_robotStarted);
     
         if ( rs == 1 ) {
+            cout << "ON REACTIVE LE WATCHDOG" << endl << flush;
             SendToRobot(new Message(MESSAGE_ROBOT_RELOAD_WD));
         }
         
