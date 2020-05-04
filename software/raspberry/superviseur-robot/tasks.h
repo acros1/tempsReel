@@ -75,7 +75,6 @@ private:
     RT_TASK th_sendToMon;
     RT_TASK th_receiveFromMon;
     RT_TASK th_openComRobot;
-    RT_TASK th_sendToRob;
     RT_TASK th_startRobot;
     RT_TASK th_move;
     RT_TASK th_watchdog;
@@ -103,7 +102,6 @@ private:
     /**********************************************************************/
     int MSG_QUEUE_SIZE;
     RT_QUEUE q_messageToMon;
-    RT_QUEUE q_messageToRob;
     
     /**********************************************************************/
     /* Tasks' functions                                                   */

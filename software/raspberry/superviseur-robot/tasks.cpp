@@ -120,10 +120,6 @@ void Tasks::Init() {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
-    if (err = rt_task_create(&th_sendToRob, "th_sendToRob", 0, PRIORITY_TSENDTOROB, 0)) {
-        cerr << "Error task create: " << strerror(-err) << endl << flush;
-        exit(EXIT_FAILURE);
-    }
     if (err = rt_task_create(&th_startRobot, "th_startRobot", 0, PRIORITY_TSTARTROBOT, 0)) {
         cerr << "Error task create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
@@ -146,10 +142,6 @@ void Tasks::Init() {
     /* Message queues creation                                                            */
     /**************************************************************************************/
     if ((err = rt_queue_create(&q_messageToMon, "q_messageToMon", sizeof (Message*)*50, Q_UNLIMITED, Q_FIFO)) < 0) {
-        cerr << "Error msg queue create: " << strerror(-err) << endl << flush;
-        exit(EXIT_FAILURE);
-    }
-    if ((err = rt_queue_create(&q_messageToRob, "q_messageToRob", sizeof (Message*)*50, Q_UNLIMITED, Q_FIFO)) < 0) {
         cerr << "Error msg queue create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
@@ -177,10 +169,6 @@ void Tasks::Run() {
         exit(EXIT_FAILURE);
     }
     if (err = rt_task_start(&th_openComRobot, (void(*)(void*)) & Tasks::OpenComRobot, this)) {
-        cerr << "Error task start: " << strerror(-err) << endl << flush;
-        exit(EXIT_FAILURE);
-    }
-    if (err = rt_task_start(&th_sendToRob, (void(*)(void*)) & Tasks::SendToRobTask, this)) {
         cerr << "Error task start: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
@@ -319,33 +307,29 @@ void Tasks::SendToMonTask(void* arg) {
 }
 
 /**
- * @brief Thread sending data to the robot.
+ * @brief Thread receiving data from robot.
  */
-Message* Tasks::SendToRobTask(void* arg) {
+Message* Tasks::SendToRobot(Message *msg) {
     Message *msgRcv;
     static int cptMsg = 0;
-
-    while (1) {
-        msg = ReadInQueue(&q_messageToRob);
-
-        rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-        msgRcv = robot.Write(msg); // The message is deleted with the Write
-        rt_mutex_release(&mutex_robot);
     
-        if ( msgRcv->CompareID(MESSAGE_ANSWER_COM_ERROR) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
-            cptMsg++;
-            if ( cptMsg > 3 ) {
-                // Connection is lost
-                cptMsg = 0;
-                //robot.Close();
-                WriteInQueue(&q_messageToMon, msgRcv);
-                rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
-                robotStarted = 0;
-                rt_mutex_release(&mutex_robotStarted);
-            }
+    rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+    msgRcv = robot.Write(msg); // The message is deleted with the Write
+    
+    if ( msgRcv->CompareID(MESSAGE_ANSWER_COM_ERROR) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
+        cptMsg++;
+        if ( cptMsg > 3 ) {
+            // Connection is lost
+            cptMsg = 0;
+            //robot.Close();
+            WriteInQueue(&q_messageToMon, msgRcv);
+            rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+            robotStarted = 0;
+            rt_mutex_release(&mutex_robotStarted);
         }
     }
     
+    rt_mutex_release(&mutex_robot);
     return msgRcv;
 }
 
@@ -400,11 +384,11 @@ void Tasks::StartRobotTask(void *arg) {
         
         if ( this->wdState == 0 ) {
             cout << "Start robot without watchdog " << endl << flush;
-            msgSend = WriteInQueue(&q_messageToRob, robot.StartWithoutWD());
+            msgSend = SendToRobot(robot.StartWithoutWD());
         }
         else {
             cout << "Start robot with watchdog " << endl << flush;
-            msgSend = WriteInQueue(&q_messageToRob, robot.StartWithWD());
+            msgSend = SendToRobot(robot.StartWithWD());
         }
         cout << msgSend->GetID() << endl << flush;
         cout << ")" << endl << flush;
@@ -446,7 +430,7 @@ void Tasks::WatchDogTask(void *arg) {
     
         if ( rs == 1 ) {
             cout << "############### ON REACTIVE LE WATCHDOG" << endl << flush;
-            WriteInQueue(&q_messageToRob, new Message(MESSAGE_ROBOT_RELOAD_WD));
+            SendToRobot(new Message(MESSAGE_ROBOT_RELOAD_WD));
         }
         
         rt_sem_v(&sem_watchDog);
@@ -483,7 +467,7 @@ void Tasks::MoveTask(void *arg) {
             
             cout << " move: " << cpMove;
             
-            WriteInQueue(&q_messageToRob, new Message((MessageID)cpMove));
+            SendToRobot(new Message((MessageID)cpMove));
         }
         cout << endl << flush;
     }
@@ -512,7 +496,7 @@ void Tasks::BatteryTask(void *arg) {
         
         if (rs == 1) {       
             cout << "Get battery level" << endl;
-            Message *batteryLevel = WriteInQueue(&q_messageToRob, robot.GetBattery());
+            Message *batteryLevel = SendToRobot(robot.GetBattery());
             
             if (batteryLevel->CompareID(MESSAGE_ROBOT_BATTERY_LEVEL)) {
                 cout << "Battery level answer: " << batteryLevel->ToString() << endl << flush;
