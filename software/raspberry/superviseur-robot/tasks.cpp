@@ -377,15 +377,17 @@ void Tasks::StartRobotTask(void *arg) {
 
         Message * msgSend;
         rt_sem_p(&sem_startRobot, TM_INFINITE);
-        cout << "Start robot without watchdog (";
+        
         if ( this->wdState == 0 ) {
+            cout << "Start robot without watchdog " << endl << flush;
             msgSend = SendToRobot(robot.StartWithoutWD());
         }
         else {
+            cout << "Start robot with watchdog " << endl << flush;
             msgSend = SendToRobot(robot.StartWithWD());
         }
-        cout << msgSend->GetID();
-        cout << ")" << endl;
+        cout << msgSend->GetID() << endl << flush;
+        cout << ")" << endl << flush;
 
         cout << "Movement answer: " << msgSend->ToString() << endl << flush;
         WriteInQueue(&q_messageToMon, msgSend);  // msgSend will be deleted by sendToMon
@@ -416,13 +418,14 @@ void Tasks::WatchDogTask(void *arg) {
        
     while (1) {
         rt_sem_p(&sem_watchDog, TM_INFINITE);
+        cout << "ON VEUT REACTIVER LE WATCHDOG" << endl << flush;
         
         rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
         int rs = robotStarted;
         rt_mutex_release(&mutex_robotStarted);
     
         if ( rs == 1 ) {
-            cout << "ON REACTIVE LE WATCHDOG" << endl << flush;
+            cout << "############### ON REACTIVE LE WATCHDOG" << endl << flush;
             SendToRobot(new Message(MESSAGE_ROBOT_RELOAD_WD));
         }
         
