@@ -24,9 +24,9 @@
 #define PRIORITY_TMOVE 20
 #define PRIORITY_TSENDTOMON 22
 #define PRIORITY_TRECEIVEFROMMON 25
-#define PRIORITY_TSTARTROBOT 20
+#define PRIORITY_TSTARTROBOT 99
 #define PRIORITY_TCAMERA 21
-#define PRIORITY_TWATCHDOG 31
+#define PRIORITY_TWATCHDOG 98
 
 /*
  * Some remarks:
@@ -315,10 +315,12 @@ Message* Tasks::SendToRobot(Message *msg) {
     
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
     msgRcv = robot.Write(msg); // The message is deleted with the Write
+    cout << "########Sending : " << msg->ToString() << endl << flush;
+    //cout << "########Receiving : " << msgRcv->ToString() << endl << flush;
     
     if ( msgRcv->CompareID(MESSAGE_ANSWER_COM_ERROR) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
         cptMsg++;
-        if ( cptMsg > 3 ) {
+        if ( cptMsg >= 1 ) {
             // Connection is lost
             cptMsg = 0;
             //robot.Close();
@@ -326,10 +328,11 @@ Message* Tasks::SendToRobot(Message *msg) {
             rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
             robotStarted = 0;
             rt_mutex_release(&mutex_robotStarted);
+            rt_sem_p(&sem_watchDog, TM_INFINITE);
         }
     }
-    
     rt_mutex_release(&mutex_robot);
+ 
     return msgRcv;
 }
 
@@ -394,16 +397,17 @@ void Tasks::StartRobotTask(void *arg) {
         cout << ")" << endl << flush;
 
         cout << "Movement answer: " << msgSend->ToString() << endl << flush;
-        WriteInQueue(&q_messageToMon, msgSend);  // msgSend will be deleted by sendToMon
-
+        
         if (msgSend->GetID() == MESSAGE_ANSWER_ACK) {
-            rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
-            robotStarted = 1;
-            rt_mutex_release(&mutex_robotStarted);
             if ( this->wdState == 1 ) {
                 rt_sem_v(&sem_watchDog);
             }
+            rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+            robotStarted = 1;
+            rt_mutex_release(&mutex_robotStarted);
         }
+        
+        WriteInQueue(&q_messageToMon, msgSend);  // msgSend will be deleted by sendToMon       
     }
 }
 
@@ -420,21 +424,21 @@ void Tasks::WatchDogTask(void *arg) {
     /**************************************************************************************/
     rt_task_set_periodic(NULL, TM_NOW, 1000000000);
        
+    //unsigned long overruns;
     while (1) {
         rt_sem_p(&sem_watchDog, TM_INFINITE);
-        cout << "ON VEUT REACTIVER LE WATCHDOG" << endl << flush;
-        
         rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
         int rs = robotStarted;
         rt_mutex_release(&mutex_robotStarted);
     
         if ( rs == 1 ) {
-            cout << "############### ON REACTIVE LE WATCHDOG" << endl << flush;
             SendToRobot(new Message(MESSAGE_ROBOT_RELOAD_WD));
         }
         
         rt_sem_v(&sem_watchDog);
+        //rt_task_sleep(1050000000);
         rt_task_wait_period(NULL); 
+        //cout << "#########TICKS : " << overruns << endl << flush;
     }    
 }
 
