@@ -401,6 +401,7 @@ void Tasks::StartRobotTask(void *arg) {
         if (msgSend->GetID() == MESSAGE_ANSWER_ACK) {
             if ( this->wdState == 1 ) {
                 rt_sem_v(&sem_watchDog);
+                rt_task_set_periodic(&th_watchdog, TM_NOW, 1000000000);
             }
             rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
             robotStarted = 1;
@@ -422,11 +423,11 @@ void Tasks::WatchDogTask(void *arg) {
     /**************************************************************************************/
     /* The task WatchDogTask starts here                                                 */
     /**************************************************************************************/
-    rt_task_set_periodic(NULL, TM_NOW, 1000000000);
-       
+    
+    rt_sem_p(&sem_watchDog, TM_INFINITE);
     //unsigned long overruns;
     while (1) {
-        rt_sem_p(&sem_watchDog, TM_INFINITE);
+        //rt_sem_p(&sem_watchDog, TM_INFINITE);
         rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
         int rs = robotStarted;
         rt_mutex_release(&mutex_robotStarted);
@@ -435,7 +436,7 @@ void Tasks::WatchDogTask(void *arg) {
             SendToRobot(new Message(MESSAGE_ROBOT_RELOAD_WD));
         }
         
-        rt_sem_v(&sem_watchDog);
+        //rt_sem_v(&sem_watchDog);
         //rt_task_sleep(1050000000);
         rt_task_wait_period(NULL); 
         //cout << "#########TICKS : " << overruns << endl << flush;
