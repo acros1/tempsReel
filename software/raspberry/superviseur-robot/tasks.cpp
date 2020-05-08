@@ -259,7 +259,6 @@ void Tasks::ReceiveFromMonTask(void *arg) {
             delete(msgRcv);
             exit(-1);
         } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
-            cout << "################################" << endl;
             rt_sem_v(&sem_openComRobot);
         } else if (msgRcv->CompareID(MESSAGE_ROBOT_START_WITH_WD)) {
             this->wdState = 1;
@@ -315,20 +314,17 @@ Message* Tasks::SendToRobot(Message *msg) {
     
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
     msgRcv = robot.Write(msg); // The message is deleted with the Write
-    cout << "########Sending : " << msg->ToString() << endl << flush;
-    //cout << "########Receiving : " << msgRcv->ToString() << endl << flush;
     
     if ( msgRcv->CompareID(MESSAGE_ANSWER_COM_ERROR) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
         cptMsg++;
         if ( cptMsg >= 1 ) {
             // Connection is lost
             cptMsg = 0;
-            //robot.Close();
             WriteInQueue(&q_messageToMon, msgRcv);
             rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
             robotStarted = 0;
             rt_mutex_release(&mutex_robotStarted);
-            rt_sem_p(&sem_watchDog, TM_INFINITE);
+            rt_task_set_periodic(&th_watchdog, TM_NOW, 0);
         }
     }
     rt_mutex_release(&mutex_robot);
@@ -395,8 +391,6 @@ void Tasks::StartRobotTask(void *arg) {
         }
         cout << msgSend->GetID() << endl << flush;
         cout << ")" << endl << flush;
-
-        cout << "Movement answer: " << msgSend->ToString() << endl << flush;
         
         if (msgSend->GetID() == MESSAGE_ANSWER_ACK) {
             if ( this->wdState == 1 ) {
@@ -425,9 +419,7 @@ void Tasks::WatchDogTask(void *arg) {
     /**************************************************************************************/
     
     rt_sem_p(&sem_watchDog, TM_INFINITE);
-    //unsigned long overruns;
     while (1) {
-        //rt_sem_p(&sem_watchDog, TM_INFINITE);
         rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
         int rs = robotStarted;
         rt_mutex_release(&mutex_robotStarted);
@@ -436,10 +428,7 @@ void Tasks::WatchDogTask(void *arg) {
             SendToRobot(new Message(MESSAGE_ROBOT_RELOAD_WD));
         }
         
-        //rt_sem_v(&sem_watchDog);
-        //rt_task_sleep(1050000000);
         rt_task_wait_period(NULL); 
-        //cout << "#########TICKS : " << overruns << endl << flush;
     }    
 }
 
