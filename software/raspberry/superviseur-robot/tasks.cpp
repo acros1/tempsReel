@@ -322,7 +322,7 @@ Message* Tasks::SendToRobot(Message *msg) {
         if ( cptMsg >= 1 ) {
             // Connection is lost
             cptMsg = 0;
-            WriteInQueue(&q_messageToMon, msgRcv);
+            WriteInQueue(&q_messageToMon, new Message(MESSAGE_ANSWER_COM_ERROR));
             rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
             robotStarted = 0;
             rt_mutex_release(&mutex_robotStarted);
