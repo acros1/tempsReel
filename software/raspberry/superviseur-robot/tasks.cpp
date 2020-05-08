@@ -263,6 +263,7 @@ void Tasks::ReceiveFromMonTask(void *arg) {
             rt_mutex_release(&mutex_robotStarted);
             rt_task_set_periodic(&th_watchdog, TM_NOW, 0);
             monitor.Close();
+            cout << "######### monitor close" << endl << flush;
             //exit(-1);
         } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
             rt_sem_v(&sem_openComRobot);
