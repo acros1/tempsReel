@@ -260,6 +260,7 @@ void Tasks::ReceiveFromMonTask(void *arg) {
             if (msgRcv->CompareID(MESSAGE_MONITOR_LOST)) {
                 //delete(msgRcv);
                 SendToRobot(new Message(MESSAGE_ROBOT_STOP));
+                SendToMonTask(new Message(MESSAGE_ROBOT_RESET));
                 rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
                 robotStarted = 0;
                 rt_mutex_release(&mutex_robotStarted);
