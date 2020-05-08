@@ -266,6 +266,8 @@ void Tasks::ReceiveFromMonTask(void *arg) {
         } else if (msgRcv->CompareID(MESSAGE_ROBOT_START_WITHOUT_WD)) {
             this->wdState = 0;
             rt_sem_v(&sem_startRobot);
+        } else if (msgRcv->CompareID(MESSAGE_ROBOT_RESET)) {
+            SendToRobot(msgRcv);
         } else if (msgRcv->CompareID(MESSAGE_ROBOT_GO_FORWARD) ||
                 msgRcv->CompareID(MESSAGE_ROBOT_GO_BACKWARD) ||
                 msgRcv->CompareID(MESSAGE_ROBOT_GO_LEFT) ||
@@ -315,7 +317,7 @@ Message* Tasks::SendToRobot(Message *msg) {
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
     msgRcv = robot.Write(msg); // The message is deleted with the Write
     
-    if ( msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_ERROR) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
+    if ( msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
         cptMsg++;
         if ( cptMsg >= 1 ) {
             // Connection is lost
