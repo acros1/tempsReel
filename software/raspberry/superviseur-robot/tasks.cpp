@@ -499,7 +499,7 @@ void Tasks::BatteryTask(void *arg) {
             cout << "Get battery level" << endl;
             Message *batteryLevel = SendToRobot(robot.GetBattery());
             
-            if (batteryLevel->CompareID(MESSAGE_ROBOT_BATTERY_LEVEL)) {
+            if ( batteryLevel != NULL && batteryLevel->CompareID(MESSAGE_ROBOT_BATTERY_LEVEL)) {
                 cout << "Battery level answer: " << batteryLevel->ToString() << endl << flush;
                 WriteInQueue(&q_messageToMon, batteryLevel);  // msgSend will be deleted by sendToMon
             }
