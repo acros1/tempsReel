@@ -320,7 +320,9 @@ Message* Tasks::SendToRobot(Message *msg) {
     static int cptMsg = 0;
     
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+    cout << "################# before write" << endl << flush; 
     msgRcv = robot.Write(msg); // The message is deleted with the Write
+    cout << "################# after write" << endl << flush; 
     
     if ( msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
         cptMsg++;
@@ -335,7 +337,7 @@ Message* Tasks::SendToRobot(Message *msg) {
         }
     }
     rt_mutex_release(&mutex_robot);
- 
+    cout << "################# leaving sendToRobot" << endl << flush; 
     return msgRcv;
 }
 
