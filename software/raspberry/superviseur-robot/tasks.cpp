@@ -267,7 +267,7 @@ void Tasks::ReceiveFromMonTask(void *arg) {
                 rt_task_set_periodic(&th_watchdog, TM_NOW, 0);
                 monitor.Close();
                 monConnected = 0;
-                exit(-1);
+                //exit(-1);
             } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
                 rt_sem_v(&sem_openComRobot);
             } else if (msgRcv->CompareID(MESSAGE_ROBOT_START_WITH_WD)) {
