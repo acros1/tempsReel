@@ -257,7 +257,13 @@ void Tasks::ReceiveFromMonTask(void *arg) {
 
         if (msgRcv->CompareID(MESSAGE_MONITOR_LOST)) {
             delete(msgRcv);
-            exit(-1);
+            monitor.Close();
+            SendToRobot(MESSAGE_ROBOT_STOP);
+            SendToRobot(MESSAGE_ROBOT_COM_CLOSE);
+            rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+            robotStarted = 0;
+            rt_mutex_release(&mutex_robotStarted);
+            //exit(-1);
         } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
             rt_sem_v(&sem_openComRobot);
         } else if (msgRcv->CompareID(MESSAGE_ROBOT_START_WITH_WD)) {
@@ -319,7 +325,7 @@ Message* Tasks::SendToRobot(Message *msg) {
     
     if ( msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
         cptMsg++;
-        if ( cptMsg >= 1 ) {
+        if ( cptMsg > 3 ) {
             // Connection is lost
             cptMsg = 0;
             WriteInQueue(&q_messageToMon, new Message(MESSAGE_ANSWER_COM_ERROR));
