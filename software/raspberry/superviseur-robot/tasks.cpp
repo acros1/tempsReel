@@ -259,7 +259,6 @@ void Tasks::ReceiveFromMonTask(void *arg) {
             delete(msgRcv);
             monitor.Close();
             SendToRobot(new Message(MESSAGE_ROBOT_STOP));
-            SendToRobot(new Message(MESSAGE_ROBOT_COM_CLOSE));
             rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
             robotStarted = 0;
             rt_mutex_release(&mutex_robotStarted);
