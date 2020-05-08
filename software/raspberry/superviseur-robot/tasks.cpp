@@ -324,31 +324,26 @@ void Tasks::SendToMonTask(void* arg) {
 Message* Tasks::SendToRobot(Message *msg) {
     Message *msgRcv;
     static int cptMsg = 0;
-    rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
-    int rs = robotStarted;
-    rt_mutex_release(&mutex_robotStarted);
     
-    if (rs == 1) {
-        rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-        msgRcv = robot.Write(msg); // The message is deleted with the Write
-        
-        if ( msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
-            cptMsg++;
-            if ( cptMsg > 3 ) {
-                // Connection is lost
-                cptMsg = 0;
-                WriteInQueue(&q_messageToMon, new Message(MESSAGE_ANSWER_COM_ERROR));
-                rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
-                robotStarted = 0;
-                rt_mutex_release(&mutex_robotStarted);
-                rt_task_set_periodic(&th_watchdog, TM_NOW, 0);
-            }
+    rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+    msgRcv = robot.Write(msg); // The message is deleted with the Write
+    
+    if ( msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND)
+        || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) 
+        || msgRcv->CompareID(MESSAGE_ANSWER_COM_ERROR)) {
+        cptMsg++;
+        if ( cptMsg > 3 ) {
+            // Connection is lost
+            cptMsg = 0;
+            WriteInQueue(&q_messageToMon, new Message(MESSAGE_ANSWER_COM_ERROR));
+            rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+            robotStarted = 0;
+            rt_mutex_release(&mutex_robotStarted);
+            rt_task_set_periodic(&th_watchdog, TM_NOW, 0);
         }
-        rt_mutex_release(&mutex_robot);
     }
-    else {
-        msgRcv = new Message(MESSAGE_EMPTY);
-    }
+    
+    rt_mutex_release(&mutex_robot);
     return msgRcv;
 }
 
