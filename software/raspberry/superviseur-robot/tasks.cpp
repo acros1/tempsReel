@@ -315,7 +315,7 @@ Message* Tasks::SendToRobot(Message *msg) {
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
     msgRcv = robot.Write(msg); // The message is deleted with the Write
     
-    if ( msgRcv->CompareID(MESSAGE_ANSWER_COM_ERROR) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
+    if ( msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_ERROR) || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) ) {
         cptMsg++;
         if ( cptMsg >= 1 ) {
             // Connection is lost
