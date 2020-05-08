@@ -67,6 +67,7 @@ private:
     int robotStarted = 0;
     int move = MESSAGE_ROBOT_STOP;
     int wdState = 0; // 0 = without watchdog, 1 = with watchdog
+    int monConnected = 0;
     
     /**********************************************************************/
     /* Tasks                                                              */
