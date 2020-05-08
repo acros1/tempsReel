@@ -258,8 +258,8 @@ void Tasks::ReceiveFromMonTask(void *arg) {
         if (msgRcv->CompareID(MESSAGE_MONITOR_LOST)) {
             delete(msgRcv);
             monitor.Close();
-            SendToRobot(MESSAGE_ROBOT_STOP);
-            SendToRobot(MESSAGE_ROBOT_COM_CLOSE);
+            SendToRobot(new Message(MESSAGE_ROBOT_STOP));
+            SendToRobot(new Message(MESSAGE_ROBOT_COM_CLOSE));
             rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
             robotStarted = 0;
             rt_mutex_release(&mutex_robotStarted);
