@@ -249,6 +249,7 @@ void Tasks::ReceiveFromMonTask(void *arg) {
     /* The task receiveFromMon starts here                                                */
     /**************************************************************************************/
     while (1) {
+        cout << "ReceiveFromMon waiting for serverOk" << endl << flush;
         rt_sem_p(&sem_serverOk, TM_INFINITE);
         monConnected = 1;
         cout << "Received message from monitor activated" << endl << flush;
@@ -267,6 +268,7 @@ void Tasks::ReceiveFromMonTask(void *arg) {
                 rt_task_set_periodic(&th_watchdog, TM_NOW, 0);
                 monitor.Close();
                 monConnected = 0;
+                cout << "Coucou on ferme :) !! !!! !! ! !! ! !! !!" << endl << flush;
                 //exit(-1);
             } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
                 rt_sem_v(&sem_openComRobot);
