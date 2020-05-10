@@ -305,7 +305,6 @@ void Tasks::ReceiveFromMonTask(void *arg) {
                 rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
                 robotStarted = 0;
                 rt_mutex_release(&mutex_robotStarted);
-
                 // robot is reset
                 cout << "RESET DONE" << endl << flush;
             } else if (msgRcv->CompareID(MESSAGE_ROBOT_GO_FORWARD) ||
@@ -318,8 +317,10 @@ void Tasks::ReceiveFromMonTask(void *arg) {
                 move = msgRcv->GetID();
                 rt_mutex_release(&mutex_move);
             }
+            
+            cout << "Will it delete ?" << endl << flush;
             delete(msgRcv); // mus be deleted manually, no consumer
-            cout << "AND CAN delete!" << endl << flush;
+            cout << "CAN delete!" << endl << flush;
         }
     }
 }
