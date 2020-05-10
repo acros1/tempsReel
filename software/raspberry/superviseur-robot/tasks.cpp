@@ -302,6 +302,12 @@ void Tasks::ReceiveFromMonTask(void *arg) {
                 rt_sem_v(&sem_startRobot);
             } else if (msgRcv->CompareID(MESSAGE_ROBOT_RESET)) {
                 SendToRobot(msgRcv);
+                rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
+                robotStarted = 0;
+                rt_mutex_release(&mutex_robotStarted);
+
+                // robot is reset
+                cout << "RESET DONE" << endl << flush;
             } else if (msgRcv->CompareID(MESSAGE_ROBOT_GO_FORWARD) ||
                     msgRcv->CompareID(MESSAGE_ROBOT_GO_BACKWARD) ||
                     msgRcv->CompareID(MESSAGE_ROBOT_GO_LEFT) ||
@@ -334,9 +340,7 @@ void Tasks::SendToMonTask(void* arg) {
 
     while (1) {
         msg = ReadInQueue(&q_messageToMon);
-        cout << "COUCOU1" << endl << flush;
         cout << "Send msg to mon: " << msg->ToString() << endl << flush;
-        cout << "COUCOU 2" << endl << flush;
         rt_mutex_acquire(&mutex_monitor, TM_INFINITE);
         monitor.Write(msg); // The message is deleted with the Write
         rt_mutex_release(&mutex_monitor);
@@ -349,10 +353,11 @@ void Tasks::SendToMonTask(void* arg) {
 Message* Tasks::SendToRobot(Message *msg) {
     Message *msgRcv;
     static int cptMsg = 0;
-    
+
+    cout << "On va robot.write()" << endl << flush;
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
     msgRcv = robot.Write(msg); // The message is deleted with the Write
-    cout << "On vient de robot.write()" << endl << flush;
+    cout << "On a robot.write()" << endl << flush;
 
     if (msgRcv == NULL
         || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND)
