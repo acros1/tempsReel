@@ -358,7 +358,7 @@ Message* Tasks::SendToRobot(Message *msg) {
 
     cout << "On va robot.write()" << endl << flush;
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
-    msgRcv = robot.Write(msg); // The message is deleted with the Write
+    msgRcv = robot.Write(msg->Copy()); // The message is deleted with the Write
     cout << "On a robot.write()" << endl << flush;
 
     if (msgRcv == NULL
