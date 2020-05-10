@@ -351,8 +351,9 @@ Message* Tasks::SendToRobot(Message *msg) {
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
     msgRcv = robot.Write(msg); // The message is deleted with the Write
     cout << "On vient de robot.write()" << endl << flush;
-    
-    if ( msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND)
+    cout << msgRcv << endl << flush;
+
+    if (msgRcv == NULL || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND)
         || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) 
         || msgRcv->CompareID(MESSAGE_ANSWER_COM_ERROR)) {
         cptMsg++;
