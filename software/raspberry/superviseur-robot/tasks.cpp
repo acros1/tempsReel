@@ -99,6 +99,11 @@ void Tasks::Init() {
         cerr << "Error semaphore create: " << strerror(-err) << endl << flush;
         exit(EXIT_FAILURE);
     }
+    // 1 so that the event can start asap
+    if (err = rt_sem_create(&sem_server, NULL, 1, S_FIFO)) {
+        cerr << "Error semaphore create: " << strerror(-err) << endl << flush;
+        exit(EXIT_FAILURE);
+    }
     cout << "Semaphores created successfully" << endl << flush;
 
     /**************************************************************************************/
@@ -221,18 +226,25 @@ void Tasks::ServerTask(void *arg) {
     /**************************************************************************************/
     /* The task server starts here                                                        */
     /**************************************************************************************/
-    rt_mutex_acquire(&mutex_monitor, TM_INFINITE);
-    status = monitor.Open(SERVER_PORT);
-    rt_mutex_release(&mutex_monitor);
+    while (true) {
+        rt_sem_p(&sem_server, TM_INFINITE);
 
-    cout << "Open server on port " << (SERVER_PORT) << " (" << status << ")" << endl;
+        rt_mutex_acquire(&mutex_monitor, TM_INFINITE);
+        status = monitor.Open(SERVER_PORT);
+        rt_mutex_release(&mutex_monitor);
 
-    if (status < 0) throw std::runtime_error {
-        "Unable to start server on port " + std::to_string(SERVER_PORT)
-    };
-    monitor.AcceptClient(); // Wait the monitor client
-    cout << "Rock'n'Roll baby, client accepted!" << endl << flush;
-    rt_sem_broadcast(&sem_serverOk);
+        if (status < 0) {
+            throw std::runtime_error {"Unable to start server on port " + std::to_string(SERVER_PORT)};
+        } else {
+            cout << "Open server on port " << (SERVER_PORT) << " (" << status << ")" << endl;
+        }
+       
+        monitor.AcceptClient(); // Wait the monitor client
+        cout << "Rock'n'Roll baby, client accepted!" << endl << flush;
+        monConnected = 1;
+        rt_sem_broadcast(&sem_serverOk);
+    }
+    
 }
 
 /**
@@ -250,8 +262,7 @@ void Tasks::ReceiveFromMonTask(void *arg) {
     /**************************************************************************************/
     while (1) {
         cout << "ReceiveFromMon waiting for serverOk" << endl << flush;
-        rt_sem_p(&sem_serverOk, TM_INFINITE);
-        monConnected = 1;
+        rt_sem_p(&sem_serverOk, TM_INFINITE);    
         cout << "Received message from monitor activated" << endl << flush;
     
         while (monConnected == 1) {
@@ -259,17 +270,24 @@ void Tasks::ReceiveFromMonTask(void *arg) {
             cout << "Rcv <= " << msgRcv->ToString() << endl << flush;
 
             if (msgRcv->CompareID(MESSAGE_MONITOR_LOST)) {
-                //delete(msgRcv);
-                //SendToRobot(new Message(MESSAGE_ROBOT_STOP));
+
+                // SendToRobot(new Message(MESSAGE_ROBOT_STOP));
                 SendToRobot(new Message(MESSAGE_ROBOT_RESET));
                 rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
                 robotStarted = 0;
                 rt_mutex_release(&mutex_robotStarted);
+
+                // Pause the watchdog task 
                 rt_task_set_periodic(&th_watchdog, TM_NOW, 0);
+                
+                // Close current monitor server
                 monitor.Close();
                 monConnected = 0;
-                cout << "Coucou on ferme :) !! !!! !! ! !! ! !! !!" << endl << flush;
-                //exit(-1);
+
+                // Restart a server & wait for a client monitor
+                rt_sem_v(&sem_server);
+
+                // exit(-1);
             } else if (msgRcv->CompareID(MESSAGE_ROBOT_COM_OPEN)) {
                 rt_sem_v(&sem_openComRobot);
             } else if (msgRcv->CompareID(MESSAGE_ROBOT_START_WITH_WD)) {

@@ -97,6 +97,7 @@ private:
     RT_SEM sem_serverOk;
     RT_SEM sem_startRobot;
     RT_SEM sem_watchDog;
+    RT_SEM sem_server;
 
     /**********************************************************************/
     /* Message queues                                                     */
