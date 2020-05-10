@@ -334,7 +334,9 @@ void Tasks::SendToMonTask(void* arg) {
 
     while (1) {
         msg = ReadInQueue(&q_messageToMon);
+        cout << "COUCOU1" << endl << flush;
         cout << "Send msg to mon: " << msg->ToString() << endl << flush;
+        cout << "COUCOU 2" << endl << flush;
         rt_mutex_acquire(&mutex_monitor, TM_INFINITE);
         monitor.Write(msg); // The message is deleted with the Write
         rt_mutex_release(&mutex_monitor);
@@ -371,7 +373,6 @@ Message* Tasks::SendToRobot(Message *msg) {
     }
     
     rt_mutex_release(&mutex_robot);
-    cout << "coucou on se casse d'ici" << endl << flush;
     return msgRcv;
 }
 
