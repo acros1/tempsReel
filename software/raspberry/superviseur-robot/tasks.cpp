@@ -332,7 +332,7 @@ Message* Tasks::SendToRobot(Message *msg) {
         || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) 
         || msgRcv->CompareID(MESSAGE_ANSWER_COM_ERROR)) {
         cptMsg++;
-        if ( cptMsg > 3 ) {
+        if ( cptMsg > 1 ) {
             // Connection is lost
             cptMsg = 0;
             WriteInQueue(&q_messageToMon, new Message(MESSAGE_ANSWER_COM_ERROR));
@@ -342,6 +342,9 @@ Message* Tasks::SendToRobot(Message *msg) {
             rt_task_set_periodic(&th_watchdog, TM_NOW, 0);
         }
     }
+    //else {
+    //    cptMsg = 0;
+    //}
     
     rt_mutex_release(&mutex_robot);
     return msgRcv;
@@ -416,7 +419,7 @@ void Tasks::StartRobotTask(void *arg) {
             robotStarted = 1;
             rt_mutex_release(&mutex_robotStarted);
         }
-        
+        //msgSend = new Message(MESSAGE_ANSWER_NACK);
         WriteInQueue(&q_messageToMon, msgSend);  // msgSend will be deleted by sendToMon       
     }
 }
