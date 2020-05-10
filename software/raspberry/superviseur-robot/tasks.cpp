@@ -319,6 +319,7 @@ void Tasks::ReceiveFromMonTask(void *arg) {
                 rt_mutex_release(&mutex_move);
             }
             delete(msgRcv); // mus be deleted manually, no consumer
+            cout << "AND CAN delete!" << endl << flush;
         }
     }
 }
