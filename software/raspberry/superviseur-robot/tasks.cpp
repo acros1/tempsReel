@@ -351,13 +351,13 @@ Message* Tasks::SendToRobot(Message *msg) {
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
     msgRcv = robot.Write(msg); // The message is deleted with the Write
     cout << "On vient de robot.write()" << endl << flush;
-    cout << msgRcv << endl << flush;
 
-    if (msgRcv == NULL || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND)
+    if (msgRcv == NULL
+        || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND)
         || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) 
         || msgRcv->CompareID(MESSAGE_ANSWER_COM_ERROR)) {
         cptMsg++;
-        if ( cptMsg > 1 ) {
+        if ( cptMsg > 3 ) {
             // Connection is lost
             cptMsg = 0;
             WriteInQueue(&q_messageToMon, new Message(MESSAGE_ANSWER_COM_ERROR));
@@ -371,6 +371,7 @@ Message* Tasks::SendToRobot(Message *msg) {
     }
     
     rt_mutex_release(&mutex_robot);
+    cout << "coucou on se casse d'ici" << endl << flush;
     return msgRcv;
 }
 
