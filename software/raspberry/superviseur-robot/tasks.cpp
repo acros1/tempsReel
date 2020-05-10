@@ -270,9 +270,13 @@ void Tasks::ReceiveFromMonTask(void *arg) {
             cout << "Rcv <= " << msgRcv->ToString() << endl << flush;
 
             if (msgRcv->CompareID(MESSAGE_MONITOR_LOST)) {
+                
+                // Stop robot and comm with it
+                SendToRobot(new Message(MESSAGE_ROBOT_STOP));
+                rt_mutex_acquire(&mutex_robot, TM_INFINITE);
+                robot.Close();
+                rt_mutex_release(&mutex_robot);
 
-                // SendToRobot(new Message(MESSAGE_ROBOT_STOP));
-                SendToRobot(new Message(MESSAGE_ROBOT_RESET));
                 rt_mutex_acquire(&mutex_robotStarted, TM_INFINITE);
                 robotStarted = 0;
                 rt_mutex_release(&mutex_robotStarted);
@@ -329,7 +333,6 @@ void Tasks::SendToMonTask(void* arg) {
     rt_sem_p(&sem_serverOk, TM_INFINITE);
 
     while (1) {
-        cout << "wait msg to send" << endl << flush;
         msg = ReadInQueue(&q_messageToMon);
         cout << "Send msg to mon: " << msg->ToString() << endl << flush;
         rt_mutex_acquire(&mutex_monitor, TM_INFINITE);
@@ -347,6 +350,7 @@ Message* Tasks::SendToRobot(Message *msg) {
     
     rt_mutex_acquire(&mutex_robot, TM_INFINITE);
     msgRcv = robot.Write(msg); // The message is deleted with the Write
+    cout << "On vient de robot.write()" << endl << flush;
     
     if ( msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_UNKNOWN_COMMAND)
         || msgRcv->CompareID(MESSAGE_ANSWER_ROBOT_TIMEOUT) 
@@ -361,10 +365,9 @@ Message* Tasks::SendToRobot(Message *msg) {
             rt_mutex_release(&mutex_robotStarted);
             rt_task_set_periodic(&th_watchdog, TM_NOW, 0);
         }
+    } else {
+        cptMsg = 0;
     }
-    //else {
-    //    cptMsg = 0;
-    //}
     
     rt_mutex_release(&mutex_robot);
     return msgRcv;
@@ -428,7 +431,6 @@ void Tasks::StartRobotTask(void *arg) {
             msgSend = SendToRobot(robot.StartWithWD());
         }
         cout << msgSend->GetID() << endl << flush;
-        cout << ")" << endl << flush;
         
         if (msgSend->GetID() == MESSAGE_ANSWER_ACK) {
             if ( this->wdState == 1 ) {
